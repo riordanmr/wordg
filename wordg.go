@@ -19,19 +19,10 @@ import (
 	"os"
 )
 
-// This list of known words comes from https://wortschatz.uni-leipzig.de/en/download/English
-// It was converted from its original format by extractfromwordlist.awk.
-// This list is currently truncated, to make the source more readable.
-var allWords = []string{
-	"their", "about", "which", "would", "after", "other", "there", "first",
-	"could", "being", "years", "these", "those", "where", "while", "going",
-	"state", "cases", "still", "three", "since", "think", "right", "place",
-	"world", "under", "every", "added", "never", "found", "virus", "might",
-	"until", "local", "media", "great", "early", "group", "staff", "again",
-}
-
 type ParseResult int
 
+// This is a weird way of creating kind of an enum.
+// The constants are for the different program modes.
 const (
 	BAD ParseResult = iota
 	RUN
@@ -68,7 +59,7 @@ func parseCmdLine() ParseResult {
 
 func isKnownWord(word string) bool {
 	found := false
-	for _, knownWord := range allWords {
+	for _, knownWord := range AllWords {
 		if knownWord == word {
 			found = true
 			break
@@ -78,7 +69,7 @@ func isKnownWord(word string) bool {
 }
 
 func runGame() {
-	word := allWords[rand.Intn(len(allWords))]
+	word := AllWords[rand.Intn(len(AllWords))]
 	//fmt.Println("The word is " + word)
 	scanner := bufio.NewScanner(os.Stdin)
 	for running := true; running; {
