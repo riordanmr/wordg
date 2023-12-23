@@ -2,11 +2,13 @@
 // word guessing game.  During the game, Side 1 choose a 5-letter word.
 // Side 2 makes guesses about the word.
 // Each guess must be a valid five-letter word.
-// The the letters of the guess entered by Side 2 will be altered by Side 1 to indicate
+// The letters of the guess entered by Side 2 will be highlighted by Side 1 to indicate
 // the accuracy of the guess.
-// A letter will be shown in green if the letter is in the word, and it is in the correct spot.
-// A letter will be shown in yellow if the letter is in the word, but it is not in the correct spot.
-// A letter will be shown in gray if the letter is not in the word.
+// Below we describe the highlighting done by Wordle, plus in parentheses the encoding
+// we use:
+// A letter will be shown in green (y) if the letter is in the word, and it is in the correct spot.
+// A letter will be shown in yellow (p) if the letter is in the word, but it is not in the correct spot.
+// A letter will be shown in gray (n) if the letter is not in the word.
 //
 // Mark Riordan  2023-12-06
 
@@ -17,6 +19,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 )
 
 type ParseResult int
@@ -77,6 +80,7 @@ func runGame() {
 		scanner.Scan()
 		guess := scanner.Text()
 		if "q" == guess {
+			fmt.Println("The word was " + word)
 			break
 		} else if len(guess) != 5 {
 			fmt.Println("Guesses must be exactly 5 lowercase letters")
@@ -85,33 +89,46 @@ func runGame() {
 			if !isKnownWord(guess) {
 				fmt.Println(guess + " is not a valid word")
 			} else {
-				response := ""
+				response := [5]string{" ", " ", " ", " ", " "}
+				// First, scan for the correct letters in the correct places.
+				// We need to have this information to later determine whether
+				// a given letter that matches a letter in a different position
+				// is a "p" or "n".
 				for j := 0; j < len(guess); j++ {
 					guessCh := guess[j : j+1]
 					//fmt.Println("Looking at char " + ch + " " + response)
 					wordCh := word[j : j+1]
 					if guessCh == wordCh {
-						response += "y"
-					} else {
+						response[j] = "y"
+					}
+				}
+				for j := 0; j < len(guess); j++ {
+					guessCh := guess[j : j+1]
+					//fmt.Println("Looking at char " + ch + " " + response)
+					wordCh := word[j : j+1]
+					if guessCh != wordCh {
 						// Iterate through the correct word, to see if this char
 						// is found elsewhere in the word.
 						found := false
 						for k := 0; k < len(word); k++ {
 							if k != j {
-								if guessCh == word[k:k+1] {
+								if guessCh == word[k:k+1] && response[j] != "y" {
+									// The guessed char is in the word, and not at
+									// a position that is a correct guess.
 									found = true
 								}
 							}
 						}
 						if found {
-							response += "p"
+							response[j] = "p"
 						} else {
-							response += "n"
+							response[j] = "n"
 						}
 					}
 				}
-				fmt.Println("Result: " + response)
-				if response == "yyyyy" {
+				responseStr := strings.Join(response[:], "")
+				fmt.Println("Result: " + responseStr)
+				if responseStr == "yyyyy" {
 					fmt.Println("Congratulations!")
 					running = false
 				}
@@ -123,12 +140,16 @@ func runGame() {
 	// }
 }
 
+func doGuesses() {
+}
+
 func main() {
 	ParseResult := parseCmdLine()
 	if ParseResult == BAD {
 		usage()
 	} else if ParseResult == GUESS {
 		fmt.Println("Not yet implemented.")
+		//doGuesses()
 	} else if ParseResult == RUN {
 		runGame()
 	}

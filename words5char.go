@@ -1,6 +1,7 @@
 package main
 
 // This list of known words comes from https://wortschatz.uni-leipzig.de/en/download/English
+// and manually edited to remove dubious entries.
 // It was converted from its original format by extractfromwordlist.awk.
 var AllWords = []string{
 	"their", "about", "which", "would", "after", "other", "there", "first",
