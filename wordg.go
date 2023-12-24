@@ -112,7 +112,7 @@ func runGame() {
 						found := false
 						for k := 0; k < len(word); k++ {
 							if k != j {
-								if guessCh == word[k:k+1] && response[j] != "y" {
+								if guessCh == word[k:k+1] && response[k] != "y" {
 									// The guessed char is in the word, and not at
 									// a position that is a correct guess.
 									found = true
@@ -141,6 +141,7 @@ func runGame() {
 }
 
 func doGuesses() {
+	//validLetters := [5][26]string
 }
 
 func main() {
