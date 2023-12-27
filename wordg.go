@@ -32,6 +32,10 @@ const (
 	GUESS
 )
 
+const LETTERS_IN_WORD = 5
+
+var MyScanner bufio.Scanner
+
 func usage() {
 	var usageMsg = []string{
 		"wordg: Program to play Wordle.",
@@ -71,14 +75,19 @@ func isKnownWord(word string) bool {
 	return found
 }
 
+func readGuessResult() string {
+	MyScanner.Scan()
+	response := MyScanner.Text()
+	return response
+}
+
 func runGame() {
 	word := AllWords[rand.Intn(len(AllWords))]
 	//fmt.Println("The word is " + word)
-	scanner := bufio.NewScanner(os.Stdin)
 	for running := true; running; {
 		fmt.Print(" Guess: ")
-		scanner.Scan()
-		guess := scanner.Text()
+		MyScanner.Scan()
+		guess := MyScanner.Text()
 		if "q" == guess {
 			fmt.Println("The word was " + word)
 			break
@@ -140,17 +149,124 @@ func runGame() {
 	// }
 }
 
+// Define a Set type as a map with a boolean value
+type StringSet map[string]bool
+
+// Function to add an element to the set
+func (set StringSet) Add(element string) {
+	set[element] = true
+}
+
+// Function to remove an element from the set
+func (set StringSet) Remove(element string) {
+	delete(set, element)
+}
+
+// Function to remove all elements from the set
+func (set StringSet) RemoveAll() {
+	clear(set)
+}
+
+// Function to check if an element exists in the set
+func (set StringSet) Contains(element string) bool {
+	return set[element]
+}
+
+func processResponse(validLetters *[LETTERS_IN_WORD]StringSet, myGuess string,
+	response string) bool {
+	foundAnswer := false
+	if response == "yyyyy" {
+		foundAnswer = true
+	} else {
+		for ipos := 0; ipos < len(validLetters); ipos++ {
+			respCh := response[ipos : ipos+1]
+			guessCh := myGuess[ipos : ipos+1]
+			if respCh == "n" {
+				for j := 0; j < LETTERS_IN_WORD; j++ {
+					validLetters[j].Remove(guessCh)
+				}
+			} else if respCh == "y" {
+				validLetters[ipos].RemoveAll()
+				validLetters[ipos].Add(guessCh)
+			} else if respCh == "p" {
+				validLetters[ipos].Remove(guessCh)
+			}
+		}
+	}
+	return foundAnswer
+}
+
+func printSetOfValidLetters(validLetters *[LETTERS_IN_WORD]StringSet) {
+	// Debug print the set of valid letters for each position.
+	for k := 0; k < len(validLetters); k++ {
+		fmt.Print(k, " ")
+		msg := ""
+		for idx := 0; idx < 26; idx++ {
+			ch := "abcdefghijklmnopqrstuvwxyz"[idx : idx+1]
+			if validLetters[k][ch] {
+				msg += ch
+			}
+		}
+		fmt.Println(msg)
+	}
+}
+
 func doGuesses() {
-	//validLetters := [5][26]string
+	// Define an array of sets, one for each position in the word being guessed.
+	// Initially populate each set with all possible letters.
+	var validLetters [LETTERS_IN_WORD]StringSet
+	for i, _ := range validLetters {
+		validLetters[i] = make(map[string]bool)
+	}
+	alphabet := "abcdefghijklmnopqrstuvwxyz"
+	for idx := 0; idx < len(validLetters); idx++ {
+		for ia := 0; ia < len(alphabet); ia++ {
+			validLetters[idx].Add(alphabet[ia : ia+1])
+		}
+	}
+
+	var response string = ""
+	for {
+		//printSetOfValidLetters(&validLetters)
+		var myGuess string
+		// Loop through the list of words, finding the first one
+		// that matches the clues we have so far.
+		for _, guess := range AllWords {
+			matches := true
+			for ilet := 0; ilet < len(guess); ilet++ {
+				if !validLetters[ilet].Contains(guess[ilet : ilet+1]) {
+					matches = false
+					break
+				}
+			}
+			if matches {
+				myGuess = guess
+				fmt.Println(myGuess)
+				break
+			}
+		}
+		if len(myGuess) == 0 {
+			fmt.Println("I could not find a matching word")
+		}
+
+		fmt.Print("Resp: ")
+		response = readGuessResult()
+		if response == "q" {
+			break
+		}
+		if processResponse(&validLetters, myGuess, response) {
+			break
+		}
+	}
 }
 
 func main() {
 	ParseResult := parseCmdLine()
+	MyScanner = *bufio.NewScanner(os.Stdin)
 	if ParseResult == BAD {
 		usage()
 	} else if ParseResult == GUESS {
-		fmt.Println("Not yet implemented.")
-		//doGuesses()
+		doGuesses()
 	} else if ParseResult == RUN {
 		runGame()
 	}
